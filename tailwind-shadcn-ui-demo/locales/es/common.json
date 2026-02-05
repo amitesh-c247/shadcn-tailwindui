@@ -1,0 +1,9 @@
+{
+  "appName": "Demo de Shadcn UI",
+  "welcome": "Bienvenido de nuevo",
+  "login": "Iniciar sesion",
+  "signup": "Crear cuenta",
+  "email": "Correo",
+  "password": "Contrasena",
+  "dashboard": "Panel"
+}
