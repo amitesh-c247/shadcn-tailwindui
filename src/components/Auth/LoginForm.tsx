@@ -2,17 +2,15 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { yupResolver } from "@hookform/resolvers/yup"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { routes } from "@/routes"
 import { login } from "@/services"
-
-type LoginFormValues = {
-  email: string
-  password: string
-}
+import { loginSchema, type LoginFormValues } from "@/lib/validations"
 
 type LoginFormProps = {
   defaultValues?: Partial<LoginFormValues>
@@ -27,72 +25,77 @@ export function LoginForm({
 }: LoginFormProps) {
   const router = useRouter()
   const [error, setError] = React.useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: yupResolver(loginSchema),
+    defaultValues,
+  })
 
   const submitting = isLoading || isSubmitting
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-
-    const values: LoginFormValues = {
-      email: String(formData.get("email") ?? ""),
-      password: String(formData.get("password") ?? ""),
-    }
-
+  const onFormSubmit = async (values: LoginFormValues) => {
     if (onSubmit) {
       onSubmit(values)
       return
     }
 
-    setIsSubmitting(true)
     setError(null)
 
-    login(values)
-      .then(() => {
-        router.push(routes.dashboard)
-        router.refresh()
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Something went wrong.")
-      })
-      .finally(() => {
-        setIsSubmitting(false)
-      })
+    try {
+      await login(values)
+      router.push(routes.dashboard)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.")
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="grid gap-4">
       <div className="grid gap-2">
-        <Label htmlFor="login-email">Email</Label>
+        <Label htmlFor="login-email" required>
+          Email
+        </Label>
         <Input
           id="login-email"
-          name="email"
           type="email"
+          placeholder="name@example.com"
           autoComplete="email"
-          defaultValue={defaultValues?.email}
-          required
+          error={!!errors.email}
+          {...register("email")}
         />
+        {errors.email && (
+          <p className="text-sm text-destructive">{errors.email.message}</p>
+        )}
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="login-password">Password</Label>
+        <Label htmlFor="login-password" required>
+          Password
+        </Label>
         <Input
           id="login-password"
-          name="password"
           type="password"
+          placeholder="••••••••"
           autoComplete="current-password"
-          defaultValue={defaultValues?.password}
-          required
+          error={!!errors.password}
+          {...register("password")}
         />
+        {errors.password && (
+          <p className="text-sm text-destructive">{errors.password.message}</p>
+        )}
       </div>
       <Button type="submit" className="w-full" disabled={submitting}>
         {submitting ? "Signing in..." : "Sign in"}
       </Button>
-      {error ? (
+      {error && (
         <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
-      ) : null}
+      )}
     </form>
   )
 }

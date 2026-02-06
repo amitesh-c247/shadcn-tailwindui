@@ -1,7 +1,7 @@
 import * as React from "react"
 
-import { Header } from "./Header"
 import { Sidebar } from "./Sidebar"
+import Header from "./Header"
 
 type AppLayoutProps = {
   children: React.ReactNode
